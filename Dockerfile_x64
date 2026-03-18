@@ -1,0 +1,43 @@
+FROM --platform=linux/amd64 quay.io/centos/centos:7.9.2009 AS amd64
+ENV EL_PLATFORM el7
+ENV SHIM_VERSION 16.1-1_ol001.$EL_PLATFORM
+
+COPY rpmmacros /root/.rpmmacros
+COPY shim-$SHIM_VERSION.src.rpm /
+RUN rm -rfv /etc/yum.repos.d/*
+COPY kickstart.repo /etc/yum.repos.d/
+RUN rpm -ivh shim-$SHIM_VERSION.src.rpm
+RUN yum install -y yum-plugins-core rpm-build gcc
+RUN yum-builddep -y /builddir/build/SPECS/shim.spec
+RUN rpmbuild -bb /builddir/build/SPECS/shim.spec
+
+RUN mkdir /built_shim/
+COPY shimx64.efi /
+COPY shimia32.efi /
+RUN cd /built_shim/; rpm2cpio /builddir/build/RPMS/x86_64/shim-unsigned-x64-$SHIM_VERSION.x86_64.rpm | cpio -diu
+RUN cd /built_shim/; rpm2cpio /builddir/build/RPMS/x86_64/shim-unsigned-ia32-$SHIM_VERSION.x86_64.rpm | cpio -diu
+RUN ls -l /*.efi /built_shim/usr/share/shim/*$SHIM_VERSION/shim*.efi
+
+RUN sha256sum /built_shim/usr/share/shim/x64-$SHIM_VERSION/shimx64.efi /shimx64.efi
+RUN sha256sum /built_shim/usr/share/shim/ia32-$SHIM_VERSION/shimia32.efi /shimia32.efi
+
+RUN hexdump -Cv /built_shim/usr/share/shim/x64-$SHIM_VERSION/shimx64.efi > built-x64.hex
+RUN hexdump -Cv /built_shim/usr/share/shim/ia32-$SHIM_VERSION/shimia32.efi > built-ia32.hex
+
+RUN hexdump -Cv /shimx64.efi > orig-x64.hex
+RUN hexdump -Cv /shimia32.efi > orig-ia32.hex
+
+RUN diff -u orig-x64.hex built-x64.hex
+RUN diff -u orig-ia32.hex built-ia32.hex
+
+RUN cmp /built_shim/usr/share/shim/x64-$SHIM_VERSION/shimx64.efi /shimx64.efi
+RUN cmp /built_shim/usr/share/shim/ia32-$SHIM_VERSION/shimia32.efi /shimia32.efi
+
+RUN pesign -h -P -i /built_shim/usr/share/shim/x64-$SHIM_VERSION/shimx64.efi
+RUN pesign -h -P -i /built_shim/usr/share/shim/ia32-$SHIM_VERSION/shimia32.efi
+
+RUN pesign -h -P -i /shimx64.efi
+RUN pesign -h -P -i /shimia32.efi
+
+RUN sha256sum /built_shim/usr/share/shim/x64-$SHIM_VERSION/shimx64.efi /shimx64.efi
+RUN sha256sum /built_shim/usr/share/shim/ia32-$SHIM_VERSION/shimia32.efi /shimia32.efi

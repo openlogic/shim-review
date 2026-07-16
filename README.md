@@ -307,7 +307,7 @@ that customers who update only our shim (and possibly GRUB2) package, while
 still running their existing CentOS-signed kernel and/or fwupdate packages,
 continue to boot without interruption.
 
-We additionally use `VENDOR_DBX_FILE` (`openlogic_dbx.txt`) to hash-block
+We additionally use `VENDOR_DBX_FILE` (`openlogic_dbx.esl`) to hash-block
 every distinct `grub2-efi`/`grub2-efi-x64` build ever shipped for CentOS 7
 (23 builds across CentOS 7.0-7.9, spanning both the `os/` and `updates/`
 trees on vault.centos.org) — see the next question for why this is
@@ -327,7 +327,7 @@ never received the SBAT-tracked fixes from June 2022 onward, and none of its
 builds carry an SBAT section at all (CentOS 7 predates SBAT), so those CVEs
 can't be addressed by SBAT generation and must be blocked by hash instead.
 
-Our strategy: `VENDOR_DBX_FILE` (`openlogic_dbx.txt`) contains the
+Our strategy: `VENDOR_DBX_FILE` (`openlogic_dbx.esl`) contains the
 Authenticode PE-hash of every distinct `grub2-efi`/`grub2-efi-x64` build ever
 shipped for CentOS 7 — 23 builds total, enumerated across all 10 CentOS 7.x
 point releases (7.0 through 7.9) and both the `os/` and `updates/` trees on

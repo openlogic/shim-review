@@ -255,7 +255,7 @@ Skip this, if you're not using GRUB2, otherwise do you have an entry in your GRU
 *******************************************************************************
 Yes. Our GRUB2 binary's SBAT section includes `grub,5,Free Software
 Foundation,grub,2.02,https://www.gnu.org/software/grub/`, in addition to our
-own appended `grub.openlogic,2,OpenLogic,grub2,2.02-169_ol000.el7,mail:ralloway@perforce.com`
+own appended `grub.openlogic,1,OpenLogic,grub2,2.02-169_ol000.el7,mail:ralloway@perforce.com`
 entry and the preserved `grub.rh,2,Red Hat,grub2,2.02-169_ol000.el7,mailto:secalert@redhat.com`
 entry (see the SBAT entries listed later in this document).
 
@@ -426,7 +426,7 @@ grub2:
 sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md
 grub,5,Free Software Foundation,grub,2.02,https://www.gnu.org/software/grub/
 grub.rh,2,Red Hat,grub2,2.02-169_ol000.el7,mailto:secalert@redhat.com
-grub.openlogic,2,OpenLogic,grub2,2.02-169_ol000.el7,mail:ralloway@perforce.com
+grub.openlogic,1,OpenLogic,grub2,2.02-169_ol000.el7,mail:ralloway@perforce.com
 ```
 MokManager:
 ```
@@ -481,7 +481,8 @@ We adapted grub2-2.02-169 from EL8 to satisfy the CVE patching requirements (Our
 ### If your shim launches any other components apart from your bootloader, please provide further details on what is launched.
 Hint: The most common case here will be a firmware updater like fwupd.
 *******************************************************************************
-fwupd, MokManager
+fwupdate (fwupx64.efi — the one EFI binary shared by fwupd and fwupdate),
+MokManager
 
 *******************************************************************************
 ### If your GRUB2 or systemd-boot launches any other binaries that are not the Linux kernel in SecureBoot mode, please provide further details on what is launched and how it enforces Secureboot lockdown.

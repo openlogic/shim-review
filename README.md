@@ -253,7 +253,11 @@ yes
 Skip this, if you're not using GRUB2, otherwise do you have an entry in your GRUB2 binary similar to:  
 `grub,5,Free Software Foundation,grub,GRUB_UPSTREAM_VERSION,https://www.gnu.org/software/grub/`?
 *******************************************************************************
-[your text here]
+Yes. Our GRUB2 binary's SBAT section includes `grub,5,Free Software
+Foundation,grub,2.02,https://www.gnu.org/software/grub/`, in addition to our
+own appended `grub.openlogic,2,OpenLogic,grub2,2.02-169_ol000.el7,mail:ralloway@perforce.com`
+entry and the preserved `grub.rh,2,Red Hat,grub2,2.02-169_ol000.el7,mailto:secalert@redhat.com`
+entry (see the SBAT entries listed later in this document).
 
 *******************************************************************************
 ### Were old shims hashes provided to Microsoft for verification and to be added to future DBX updates?
@@ -294,7 +298,20 @@ Yes.  We use ephemeral keys.
 ### If you use vendor_db functionality of providing multiple certificates and/or hashes please briefly describe your certificate setup.
 ### If there are allow-listed hashes please provide exact binaries for which hashes are created via file sharing service, available in public with anonymous access for verification.
 *******************************************************************************
-Yes.  We have our EV cert which is used for signing our shim, vendor certs for signing our other SecureBoot assets and the existing centos.db.x64.esl for backwards compatibility.
+Yes. Our `VENDOR_DB_FILE` (`openlogic-and-centos-db.esl`) is a combined EFI
+Signature List with three entries: our own OpenLogic CA (which signs our
+GRUB2/kernel/fwupdate builds via a separate leaf signing cert), plus both of
+CentOS's own production Secure Boot CA generations ("CentOS Secure Boot (CA
+key 1)" and "CentOS Secure Boot CA 2"). The two CentOS CA entries exist so
+that customers who update only our shim (and possibly GRUB2) package, while
+still running their existing CentOS-signed kernel and/or fwupdate packages,
+continue to boot without interruption.
+
+We additionally use `VENDOR_DBX_FILE` (`openlogic_dbx.txt`) to hash-block
+every distinct `grub2-efi`/`grub2-efi-x64` build ever shipped for CentOS 7
+(23 builds across CentOS 7.0-7.9, spanning both the `os/` and `updates/`
+trees on vault.centos.org) — see the next question for why this is
+necessary despite trusting the CentOS CA.
 
 *******************************************************************************
 ### If you are re-using the CA certificate from your last shim binary, you will need to add the hashes of the previous GRUB2 binaries exposed to the CVEs mentioned earlier to vendor_dbx in shim. Please describe your strategy.
@@ -302,7 +319,25 @@ This ensures that your new shim+GRUB2 can no longer chainload those older GRUB2 
 
 If this is your first application or you're using a new CA certificate, please say so here.
 *******************************************************************************
-This is our first application.
+This is our first application, and our own OpenLogic CA/leaf certificate is
+new. However, our `VENDOR_DB_FILE` also trusts CentOS's own Secure Boot CA
+(for backwards compatibility, described above), and that CA has already
+signed GRUB2 builds affected by the CVEs listed earlier — CentOS 7's GRUB2
+never received the SBAT-tracked fixes from June 2022 onward, and none of its
+builds carry an SBAT section at all (CentOS 7 predates SBAT), so those CVEs
+can't be addressed by SBAT generation and must be blocked by hash instead.
+
+Our strategy: `VENDOR_DBX_FILE` (`openlogic_dbx.txt`) contains the
+Authenticode PE-hash of every distinct `grub2-efi`/`grub2-efi-x64` build ever
+shipped for CentOS 7 — 23 builds total, enumerated across all 10 CentOS 7.x
+point releases (7.0 through 7.9) and both the `os/` and `updates/` trees on
+vault.centos.org (the package was renamed `grub2-efi` to `grub2-efi-x64`
+starting with 7.4). This ensures our shim cannot chainload any GRUB2 binary
+CentOS has ever shipped, regardless of which CVEs it is or isn't patched
+against — only GRUB2 built and signed by us (or a future CentOS build we
+haven't yet enumerated, at which point we'd add its hash) can boot. The
+CentOS CA entries in `VENDOR_DB_FILE` remain meaningful for the kernel and
+fwupdate binaries they've signed, which are not affected by these GRUB2 CVEs.
 
 *******************************************************************************
 ### Is the Dockerfile in your repository the recipe for reproducing the building of your shim binary?
@@ -331,8 +366,13 @@ Skip this, if this is your first application for having shim signed.
 *******************************************************************************
 ### What is the SHA256 hash of your final shim binary?
 *******************************************************************************
-ef127b6b3a28c497f8e6fedd773b301a65679bbc666dbbd761733b4f5755e1a9  shimia32.efi
-e0ad651b0f767351511b278f74273dc9b125d855eab9f63c80d3a2ffc04edc9b  shimx64.efi
+a065d25786106bd4c8d6ff7666daabf70154e7ca2d5a374a9bdcb504299a4429  shimia32.efi
+4b36b994568fd877a522627e0ab6f9ed4db4e78e4e0813b5e7507d7c110351c8  shimx64.efi
+
+NOTE: these hashes match the binaries currently committed to this repo, but
+those binaries predate this session's VENDOR_DBX_FILE addition and other
+shim.spec changes and need to be rebuilt before submission — this line will
+need updating again once that rebuild happens.
 
 *******************************************************************************
 ### How do you manage and protect the keys used in your shim?
@@ -353,7 +393,16 @@ if _yes_: does that certificate include the X509v3 Basic Constraints
 to say that it is a CA? See the [docs](./docs/) for more guidance
 about this.
 *******************************************************************************
-Yes.  Also including a Perforce CA cert that sign our other SecureBoot assets plus the CentOS CA so that our customers who update to the OpenLogic shim (and possibly grub) packages (but continue to run the existing CentOS kernel (and possibly grub) packages) will continue to work.
+Yes. Our own Perforce/OpenLogic CA (which signs our GRUB2/kernel/fwupdate
+builds via a leaf signing cert) includes the X509v3 Basic Constraints CA:TRUE
+extension. We also embed both of CentOS's own production Secure Boot CA
+generations ("CentOS Secure Boot (CA key 1)" and "CentOS Secure Boot CA 2")
+so that customers who update to our shim (and possibly GRUB2) package, but
+continue running their existing CentOS-signed kernel and/or fwupdate
+packages, will continue to boot. As described above, we pair this with a
+`VENDOR_DBX_FILE` hash-blocking every CentOS-signed GRUB2 build ever shipped,
+since GRUB2 (unlike kernel/fwupdate) has known CVEs the CentOS CA's signed
+builds were never patched against.
 
 *******************************************************************************
 ### Do you add a vendor-specific SBAT entry to the SBAT section in each binary that supports SBAT metadata ( GRUB2, fwupd, fwupdate, systemd-boot, systemd-stub, shim + all child shim binaries )?
@@ -385,9 +434,18 @@ sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md
 shim,4,UEFI shim,shim,1,https://github.com/rhboot/shim
 shim.openlogic,1,OpenLogic,shim,16.1-1_ol001,ralloway@perforce.com
 ```
-fwupd: N/A (CentOS 7 fwupd does not support sbat, though it is signed)
+fwupdate (fwupx64.efi — the one EFI binary shared by both the `fwupd` and
+`fwupdate` packages; `fwupd` itself has no `.efi` of its own): N/A. Confirmed
+via both the upstream `fwupdate-12` source (no "sbat" anywhere; the final
+build step's `objcopy -j` section whitelist would strip a `.sbat` section
+even if one existed) and the actual shipped binary (no `.sbat` section
+present). Upstream `rhboot/fwupdate` was last released in 2018 and the
+project's repo saw its last commit in March 2021, right as SBAT was being
+introduced, and was superseded by `fwupd` before SBAT existed — there is no
+upstream SBAT implementation to adopt. It is signed with our leaf cert.
 
-kernel: N/A (CentOS 7 kernel does not support sbat, though it is signed)
+kernel: N/A (the kernel image itself does not carry an SBAT section; it is
+signed with our leaf cert)
 
 *******************************************************************************
 ### If shim is loading GRUB2 bootloader, which modules are built into your signed GRUB2 image?
@@ -445,7 +503,17 @@ No.
 *******************************************************************************
 ### What kernel are you using? Which patches and configuration does it include to enforce Secure Boot?
 *******************************************************************************
-[your text here]
+We are using the CentOS 7 kernel (3.10.0-1160.119.1), patched and rebuilt by
+us since it is EoL upstream. Secure Boot lockdown itself is enforced by
+Red Hat's own long-standing EL7 patch that automatically enables lockdown
+when Secure Boot is active in firmware (applied since August 2013, per the
+answer above). On top of that, we've added our own patch that closes a gap
+in the existing lockdown coverage: kgdb_handle_exception() now declines to
+enter the debugger once get_securelevel() > 0, mirroring the securelevel
+checks the EL7 kernel already applies to kexec, MSR/IO-port access,
+/dev/mem, and hibernation, and matching upstream's own
+"lockdown: also lock down previous kgdb use" fix referenced earlier in this
+document.
 
 *******************************************************************************
 ### What contributions have you made to help us review the applications of other applicants?

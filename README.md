@@ -353,8 +353,13 @@ Yes
 ### Which files in this repo are the logs for your build?
 This should include logs for creating the buildroots, applying patches, doing the build, creating the archives, etc.
 *******************************************************************************
-root.log.shim.20260318-211905.centos7.log
-build.log.shim.20260318-211905.centos7.log
+NOTE (260722): this previously named root.log.shim.20260318-211905.centos7.log
+/ build.log.shim.20260318-211905.centos7.log, but neither file actually
+exists in this repo (confirmed via `git ls-files` -- no *.log of any kind is
+checked in), and those names are dated to the old, now-replaced March 2026
+build. Real build logs from the 260722 rebuild (matching the current
+shimx64.efi/shimia32.efi and shim-16.1-1_ol001.el7.src.rpm above) still need
+to be added here before this application is actually submitted.
 
 *******************************************************************************
 ### What changes were made in the distro's secure boot chain since your SHIM was last signed?
@@ -366,13 +371,18 @@ Skip this, if this is your first application for having shim signed.
 *******************************************************************************
 ### What is the SHA256 hash of your final shim binary?
 *******************************************************************************
-a065d25786106bd4c8d6ff7666daabf70154e7ca2d5a374a9bdcb504299a4429  shimia32.efi
-4b36b994568fd877a522627e0ab6f9ed4db4e78e4e0813b5e7507d7c110351c8  shimx64.efi
+2afb856d0e59284bdc942fe7ba320d51844278c2c0fdc884881778459bae6c78  shimia32.efi
+47e4c7b7a3773572e48ead668b728e257a5eef0ca5871a013811f7e22448577e  shimx64.efi
 
-NOTE: these hashes match the binaries currently committed to this repo, but
-those binaries predate this session's VENDOR_DBX_FILE addition and other
-shim.spec changes and need to be rebuilt before submission — this line will
-need updating again once that rebuild happens.
+Rebuilt 260722 from the current shim.spec (VENDOR_DBX_FILE included) via
+`shim-16.1-1_ol001.el7.src.rpm`, also checked into this repo. Verified: both
+binaries are correctly unsigned (no Authenticode signature -- this is
+expected, per Microsoft's own docs at learn.microsoft.com/en-us/windows-hardware/drivers/dashboard/file-signing-reqs,
+the EV certificate signs the submission CAB file, not the shim binary
+itself), and their embedded VENDOR_DB_FILE/VENDOR_DBX_FILE sections are
+byte-identical to openlogic-and-centos-db.esl/openlogic_dbx.esl as packaged
+in the SRPM above. The SBAT section also matches this document's entries
+exactly (`shim.openlogic,1,OpenLogic,shim,16.1-1_ol001,ralloway@perforce.com`).
 
 *******************************************************************************
 ### How do you manage and protect the keys used in your shim?

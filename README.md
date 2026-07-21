@@ -353,13 +353,14 @@ Yes
 ### Which files in this repo are the logs for your build?
 This should include logs for creating the buildroots, applying patches, doing the build, creating the archives, etc.
 *******************************************************************************
-NOTE (260722): this previously named root.log.shim.20260318-211905.centos7.log
-/ build.log.shim.20260318-211905.centos7.log, but neither file actually
-exists in this repo (confirmed via `git ls-files` -- no *.log of any kind is
-checked in), and those names are dated to the old, now-replaced March 2026
-build. Real build logs from the 260722 rebuild (matching the current
-shimx64.efi/shimia32.efi and shim-16.1-1_ol001.el7.src.rpm above) still need
-to be added here before this application is actually submitted.
+root.log.shim.20260721-092112.centos7.log
+build.log.shim.20260721-092112.centos7.log
+
+From a mock build (centos+epel-7-x86_64) of shim-16.1-1_ol001.el7.src.rpm
+above, confirmed matching (build.log shows `VENDOR_DB_FILE=.../openlogic-and-
+centos-db.esl VENDOR_DBX_FILE=.../openlogic_dbx.esl` on every compile
+invocation, and the `pesign -h -P -i shimx64.efi`/`shimia32.efi` calls at the
+end of %install match shim.spec exactly).
 
 *******************************************************************************
 ### What changes were made in the distro's secure boot chain since your SHIM was last signed?
@@ -374,7 +375,7 @@ Skip this, if this is your first application for having shim signed.
 2afb856d0e59284bdc942fe7ba320d51844278c2c0fdc884881778459bae6c78  shimia32.efi
 47e4c7b7a3773572e48ead668b728e257a5eef0ca5871a013811f7e22448577e  shimx64.efi
 
-Rebuilt 260722 from the current shim.spec (VENDOR_DBX_FILE included) via
+Rebuilt 260721 from the current shim.spec (VENDOR_DBX_FILE included) via
 `shim-16.1-1_ol001.el7.src.rpm`, also checked into this repo. Verified: both
 binaries are correctly unsigned (no Authenticode signature -- this is
 expected, per Microsoft's own docs at learn.microsoft.com/en-us/windows-hardware/drivers/dashboard/file-signing-reqs,

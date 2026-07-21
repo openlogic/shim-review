@@ -550,7 +550,17 @@ A reasonable timeframe of waiting for a review can reach 2-3 months. Helping us 
 
 For newcomers, the applications labeled as [*easy to review*](https://github.com/rhboot/shim-review/issues?q=is%3Aopen+is%3Aissue+label%3A%22easy+to+review%22) are recommended to start the contribution process.
 *******************************************************************************
-[your text here]
+None yet — this is our first shim-review submission. We do have a
+VM-based Secure Boot functional test suite (Vagrant + VirtualBox,
+described in the "additional information" answer above) that goes beyond
+the static source/patch/cert review most submissions get: it genuinely
+boots a shim/GRUB2/kernel/fwupdate chain under real firmware-level Secure
+Boot enforcement and confirms functional claims like `vendor_dbx`
+hash-blocking and kernel lockdown, rather than just inspecting source and
+certificates. We're happy to point that at another submission's
+functional claims on request, and will look at picking up an [*easy to
+review*](https://github.com/rhboot/shim-review/issues?q=is%3Aopen+is%3Aissue+label%3A%22easy+to+review%22)-labeled
+issue for our next contribution.
 
 *******************************************************************************
 ### Add any additional information you think we may need to validate this shim signing application.

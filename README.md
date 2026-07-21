@@ -422,6 +422,14 @@ packages, will continue to boot. As described above, we pair this with a
 since GRUB2 (unlike kernel/fwupdate) has known CVEs the CentOS CA's signed
 builds were never patched against.
 
+**Note on organization-name formatting:** the embedded CA/leaf
+certificates' Subject `O=` field reads `Perforce Software Inc` (no comma,
+no trailing period), while the EV certificate documented above reads
+`O="Perforce Software, Inc."`. Both refer to the same legal entity (File
+Number 6256601, Delaware) — the difference is punctuation in how the
+certificate was requested, not a different organization. Let us know if
+that is a problem.
+
 *******************************************************************************
 ### Do you add a vendor-specific SBAT entry to the SBAT section in each binary that supports SBAT metadata ( GRUB2, fwupd, fwupdate, systemd-boot, systemd-stub, shim + all child shim binaries )?
 ### Please provide the exact SBAT entries for all binaries you are booting directly through shim.

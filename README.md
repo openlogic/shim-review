@@ -347,7 +347,14 @@ Hint: Prefer using *frozen* packages for your toolchain, since an update to GCC,
 
 If your shim binaries can't be reproduced using the provided Dockerfile, please explain why that's the case, what the differences would be and what build environment (OS and toolchain) is being used to reproduce this build? In this case please write a detailed guide, how to setup this build environment from scratch.
 *******************************************************************************
-Yes
+Yes.
+
+Confirmed 260721 via `docker build .` against this exact repo state: the
+rebuilt `shimx64.efi`/`shimia32.efi` are byte-for-byte identical to the
+copies checked in here (`diff` on full hexdumps and `cmp` both pass with no
+differences -- either would abort the build on a mismatch), matching
+SHA256 (`47e4c7b7...` x64, `2afb856d...` ia32) and matching `pesign -h -P`
+pre-signature hashes (`cdaea375...` x64, `65f80495...` ia32) on both sides.
 
 *******************************************************************************
 ### Which files in this repo are the logs for your build?

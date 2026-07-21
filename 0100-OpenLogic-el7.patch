@@ -1,0 +1,35 @@
+From 00c86a51d0ce879aff1d3c9f3fb6217e73f8d179 Wed Feb 25 00:00:00 2026
+From: Rich Alloway <raloway@perforce.com>
+Date: Wed, 25 Feb 2026 14:46:51 -0500
+Subject: [PATCH] dos2unix: fix flags for CentOS 7
+
+CentOS 7 has a version of dos2unix that doesn't support -r, and I couldn't
+figure out how to get rpm+shell+make to cooperate in setting the flags
+from the .spec file, so it's changed here instead.
+
+#diff --git a/shim-16.1-ia32/Make.defaults b/shim-16.1-ia32/Make.defaults
+#index c5fa32b..3746d00 100644
+#--- a/shim-16.1-ia32/Make.defaults
+#+++ b/shim-16.1-ia32/Make.defaults
+#@@ -9,7 +9,7 @@ HOSTCC		= $(COMPILER)
+# LD		= $(CROSS_COMPILE)ld
+# OBJCOPY		= $(CROSS_COMPILE)objcopy
+# DOS2UNIX	?= dos2unix
+#-D2UFLAGS	?= -r -l -F -f -n
+#+D2UFLAGS	?= -l -F -f -n
+# OPENSSL		?= openssl
+# HEXDUMP		?= hexdump
+# INSTALL		?= install
+diff --git a/Make.defaults b/Make.defaults
+index c5fa32b..3746d00 100644
+--- a/Make.defaults
++++ b/Make.defaults
+@@ -9,7 +9,7 @@ HOSTCC		= $(COMPILER)
+ LD		= $(CROSS_COMPILE)ld
+ OBJCOPY		= $(CROSS_COMPILE)objcopy
+ DOS2UNIX	?= dos2unix
+-D2UFLAGS	?= -r -l -F -f -n
++D2UFLAGS	?= -l -F -f -n
+ OPENSSL		?= openssl
+ HEXDUMP		?= hexdump
+ INSTALL		?= install

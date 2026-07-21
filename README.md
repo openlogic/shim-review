@@ -540,4 +540,47 @@ For newcomers, the applications labeled as [*easy to review*](https://github.com
 *******************************************************************************
 ### Add any additional information you think we may need to validate this shim signing application.
 *******************************************************************************
-[your text here]
+Beyond what's asked above, we built and ran a dedicated Secure Boot
+chain-of-trust validation suite before preparing this submission, adapted
+from Ubuntu's official Secure Boot testing methodology
+(wiki.ubuntu.com/UEFI/SecureBoot/Testing) and retargeted for RHEL/CentOS
+tooling (`pesign`, `yum`) and our own PKI. It uses Vagrant + VirtualBox,
+which genuinely enforces Secure Boot in the guest (real PK/db/dbx
+certificates enrolled into UEFI NVRAM, real signature validation against
+them) rather than simulating it — an unsigned or wrong-key binary is
+rejected by actual (virtual) firmware, not by a mock check.
+
+**Structure — three phases, 52 total test rows:**
+
+- **Phase A (27 rows)** — per-asset isolation, against a throwaway
+  self-signed test shim compiled with our real `VENDOR_DB_FILE`/
+  `VENDOR_DBX_FILE`. Confirms each asset (GRUB2, kernel, fwupdate)
+  individually boots when correctly signed and is rejected when unsigned,
+  wrong-key-signed, or (for GRUB2) hash-blocked by `vendor_dbx`.
+- **Phase B (5 rows)** — full shim → GRUB2 → kernel chain, live-booted end
+  to end for every realistic mixed-origin permutation (OpenLogic-built vs.
+  CentOS-built kernel/fwupdate, GRUB2 fixed at OpenLogic-built since
+  CentOS's GRUB2 is unconditionally hash-blocked). Proves the
+  backwards-compatibility claim below isn't just a config-level assertion —
+  a CentOS-signed kernel/fwupdate genuinely boots via our shim.
+- **Phase C (20 rows)** — post-signing regression, to run once Microsoft
+  returns the signed binary. Re-confirms shim's own outer signature and
+  firmware-level DBX behavior against Microsoft's CA; doesn't repeat the
+  full per-link/permutation logic already proven in A/B against the same
+  dual-trust design.
+
+Phases A and B (32 rows) are complete and passing as of this submission.
+Verification wasn't limited to "did the VM come back up after reboot" —
+several rows specifically confirm, via `/proc/cmdline`'s `BOOT_IMAGE=` and
+`/lib/modules/<version>/` presence, that the kernel which actually booted
+is the one under test, not a pre-existing default kernel silently booting
+instead. This caught and fixed real test-harness bugs during development
+(documented in our own findings log) rather than producing false passes.
+
+**Known, tracked gaps, disclosed proactively:** MokManager (`mmx64.efi`)
+and fallback (`fbx64.efi`) have signature verification covered but no
+dedicated live-boot test row yet. `fwupx64.efi`'s signature is verified,
+but its actual load path (`BootNext`/`efibootmgr`, a one-time boot
+override) isn't exercised by a normal reboot, so that specific trigger
+hasn't been live-tested end to end. Neither gap reflects a known or
+suspected defect — both are scope items for a future test-suite iteration.

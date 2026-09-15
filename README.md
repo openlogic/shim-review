@@ -308,10 +308,11 @@ still running their existing CentOS-signed kernel and/or fwupdate packages,
 continue to boot without interruption.
 
 We additionally use `VENDOR_DBX_FILE` (`openlogic_dbx.esl`) to hash-block
-every distinct `grub2-efi`/`grub2-efi-x64` build ever shipped for CentOS 7
-(23 builds across CentOS 7.0-7.9, spanning both the `os/` and `updates/`
-trees on vault.centos.org) — see the next question for why this is
-necessary despite trusting the CentOS CA.
+every distinct `grub2-efi`/`grub2-efi-x64`/`grub2-efi-ia32` build ever
+shipped for CentOS 7 (38 builds -- 23 x64 + 15 ia32 -- across CentOS
+7.0-7.9, spanning both the `os/` and `updates/` trees on
+vault.centos.org) — see the next question for why this is necessary
+despite trusting the CentOS CA.
 
 *******************************************************************************
 ### If you are re-using the CA certificate from your last shim binary, you will need to add the hashes of the previous GRUB2 binaries exposed to the CVEs mentioned earlier to vendor_dbx in shim. Please describe your strategy.
@@ -334,14 +335,20 @@ none of them are blocked by SBAT generation today, and all are blocked by
 hash instead.
 
 Our strategy: `VENDOR_DBX_FILE` (`openlogic_dbx.esl`) contains the
-Authenticode PE-hash of every distinct `grub2-efi`/`grub2-efi-x64` build ever
-shipped for CentOS 7 — 23 builds total, enumerated across all 10 CentOS 7.x
-point releases (7.0 through 7.9) and both the `os/` and `updates/` trees on
-vault.centos.org (the package was renamed `grub2-efi` to `grub2-efi-x64`
-starting with 7.4). This ensures our shim cannot chainload any GRUB2 binary
-CentOS has ever shipped, regardless of which CVEs it is or isn't patched
-against — only GRUB2 built and signed by us (or a future CentOS build we
-haven't yet enumerated, at which point we'd add its hash) can boot. The
+Authenticode PE-hash of every distinct `grub2-efi`/`grub2-efi-x64` build
+ever shipped for CentOS 7 (23 builds, enumerated across all 10 CentOS 7.x
+point releases -- 7.0 through 7.9 -- and both the `os/` and `updates/`
+trees on vault.centos.org; the package was renamed `grub2-efi` to
+`grub2-efi-x64` starting with 7.4), **plus every distinct
+`grub2-efi-ia32` build** (15 builds, all from 7.4 onward -- this package
+never existed before 7.4, unlike the x64 line's rename). 38 entries
+total. `shimx64.efi` and `shimia32.efi` embed the same combined list, so
+both architectures are covered by the same hash-blocking regardless of
+which one a given customer boots. This ensures our shim cannot chainload
+any GRUB2 binary CentOS has ever shipped, on either architecture,
+regardless of which CVEs it is or isn't patched against — only GRUB2
+built and signed by us (or a future CentOS build we haven't yet
+enumerated, at which point we'd add its hash) can boot. The
 CentOS CA entries in `VENDOR_DB_FILE` remain meaningful for the kernel and
 fwupdate binaries they've signed, which are not affected by these GRUB2 CVEs.
 
@@ -355,25 +362,24 @@ If your shim binaries can't be reproduced using the provided Dockerfile, please 
 *******************************************************************************
 Yes.
 
-Confirmed 260721 via `docker build .` against this exact repo state: the
-rebuilt `shimx64.efi`/`shimia32.efi` are byte-for-byte identical to the
-copies checked in here (`diff` on full hexdumps and `cmp` both pass with no
-differences -- either would abort the build on a mismatch), matching
-SHA256 (`47e4c7b7...` x64, `2afb856d...` ia32) and matching `pesign -h -P`
-pre-signature hashes (`cdaea375...` x64, `65f80495...` ia32) on both sides.
+Confirmed 260721 via `docker build .` against the repo state at that time.
+**This binary was refreshed on 260915** (see the hash question below for
+what changed and why) and Docker reproducibility has not yet been
+re-confirmed against the new content -- pending before this answer can be
+considered current again. The previous confirmation's specifics (hashes,
+method) are no longer accurate for the binaries checked in now and have
+been removed rather than left stale.
 
 *******************************************************************************
 ### Which files in this repo are the logs for your build?
 This should include logs for creating the buildroots, applying patches, doing the build, creating the archives, etc.
 *******************************************************************************
-root.log.shim.20260721-092112.centos7.log
-build.log.shim.20260721-092112.centos7.log
-
-From a mock build (centos+epel-7-x86_64) of shim-16.1-1_ol001.el7.src.rpm
-above, confirmed matching (build.log shows `VENDOR_DB_FILE=.../openlogic-and-
-centos-db.esl VENDOR_DBX_FILE=.../openlogic_dbx.esl` on every compile
-invocation, and the `pesign -h -P -i shimx64.efi`/`shimia32.efi` calls at the
-end of %install match shim.spec exactly).
+**Pending.** `root.log.shim.20260721-092112.centos7.log`/
+`build.log.shim.20260721-092112.centos7.log` were for the previous
+(260721) build and no longer correspond to the binaries checked in here
+as of 260915 -- removed rather than left as stale/misleading references.
+Fresh logs from the build that produced the current `shimx64.efi`/
+`shimia32.efi` need to be added here before this answer is complete.
 
 *******************************************************************************
 ### What changes were made in the distro's secure boot chain since your SHIM was last signed?
@@ -385,18 +391,33 @@ Skip this, if this is your first application for having shim signed.
 *******************************************************************************
 ### What is the SHA256 hash of your final shim binary?
 *******************************************************************************
-2afb856d0e59284bdc942fe7ba320d51844278c2c0fdc884881778459bae6c78  shimia32.efi
-47e4c7b7a3773572e48ead668b728e257a5eef0ca5871a013811f7e22448577e  shimx64.efi
+207686c7e8d93e43684adc9fd823c466bb2fe33c4e0cec68585c83f75763cf26  shimia32.efi
+e6612032f08e222e6a1086d25688d923fa8bdc38029d57f831e5777778eedca5  shimx64.efi
 
-Rebuilt 260721 from the current shim.spec (VENDOR_DBX_FILE included) via
-`shim-16.1-1_ol001.el7.src.rpm`, also checked into this repo. Verified: both
-binaries are correctly unsigned (no Authenticode signature -- this is
-expected, per Microsoft's own docs at learn.microsoft.com/en-us/windows-hardware/drivers/dashboard/file-signing-reqs,
+Rebuilt 260915 from the current shim.spec (`openlogic_dbx.esl` now
+covering ia32 as well as x64 -- 38 entries total -- and
+`SBAT_AUTOMATIC_DATE` bumped from `2024010900` to `2025021800`, both
+raised in this application's community review) via
+`shim-16.1-1_ol001.el7.src.rpm`, also checked into this repo, replacing
+the previous 260721 build. Verified: both binaries are correctly
+unsigned (no Authenticode signature -- this is expected, per Microsoft's
+own docs at learn.microsoft.com/en-us/windows-hardware/drivers/dashboard/file-signing-reqs,
 the EV certificate signs the submission CAB file, not the shim binary
-itself), and their embedded VENDOR_DB_FILE/VENDOR_DBX_FILE sections are
-byte-identical to openlogic-and-centos-db.esl/openlogic_dbx.esl as packaged
-in the SRPM above. The SBAT section also matches this document's entries
-exactly (`shim.openlogic,1,OpenLogic,shim,16.1-1_ol001,ralloway@perforce.com`).
+itself); their embedded VENDOR_DB_FILE/VENDOR_DBX_FILE sections are
+byte-identical to openlogic-and-centos-db.esl/openlogic_dbx.esl as
+packaged in the SRPM above, on both architectures; the `.sbat` section
+(shim's own identity) still matches this document's entries exactly
+(`shim.openlogic,1,OpenLogic,shim,16.1-1_ol001,ralloway@perforce.com`);
+and the compiled-in automatic SBAT revocation policy now reads
+`sbat,1,2025021800 / shim,4 / grub,5` (previously `grub,3`) on both
+architectures, confirmed by extracting the `.sbatlevel` section directly
+rather than trusting the build log alone. The SRPM itself was confirmed
+reproducible against the checked-in `shim.spec`/`SOURCES` (`rpmbuild -bs`
+locally, file-for-file and byte-for-byte identical output, differing
+only in the NVR's build-environment snapshot suffix) -- this specific
+check is a local-rebuild comparison, not the `docker build .`
+reproducibility check described above, which is still pending
+re-confirmation.
 
 *******************************************************************************
 ### How do you manage and protect the keys used in your shim?

@@ -374,12 +374,21 @@ been removed rather than left stale.
 ### Which files in this repo are the logs for your build?
 This should include logs for creating the buildroots, applying patches, doing the build, creating the archives, etc.
 *******************************************************************************
-**Pending.** `root.log.shim.20260721-092112.centos7.log`/
-`build.log.shim.20260721-092112.centos7.log` were for the previous
-(260721) build and no longer correspond to the binaries checked in here
-as of 260915 -- removed rather than left as stale/misleading references.
-Fresh logs from the build that produced the current `shimx64.efi`/
-`shimia32.efi` need to be added here before this answer is complete.
+root.log.shim.20260915-101619.centos7.log
+build.log.shim.20260915-101602.centos7.log
+
+From the PublicPublish mock build (`centos+epel-7-x86_64`) of
+`shim-16.1-1_ol001.el7.src.rpm` above that produced the `shimx64.efi`/
+`shimia32.efi` checked in here. Confirmed matching, not just present:
+`build.log` shows `VENDOR_DB_FILE=.../openlogic-and-centos-db.esl
+VENDOR_DBX_FILE=.../openlogic_dbx.esl SBAT_AUTOMATIC_DATE=2025021800` on
+every compile invocation, and its final `RPMS/` lines
+(`shim-unsigned-x64-16.1-1_ol001.el7.x86_64.rpm`,
+`shim-unsigned-ia32-16.1-1_ol001.el7.x86_64.rpm`, plus debuginfo
+packages) match the NVR of the binaries actually checked in. Supersedes
+the previous (260721) `root.log`/`build.log`, which were for the build
+before this application's community-review fixes and have been removed
+rather than left as stale references.
 
 *******************************************************************************
 ### What changes were made in the distro's secure boot chain since your SHIM was last signed?

@@ -323,9 +323,15 @@ This is our first application, and our own OpenLogic CA/leaf certificate is
 new. However, our `VENDOR_DB_FILE` also trusts CentOS's own Secure Boot CA
 (for backwards compatibility, described above), and that CA has already
 signed GRUB2 builds affected by the CVEs listed earlier — CentOS 7's GRUB2
-never received the SBAT-tracked fixes from June 2022 onward, and none of its
-builds carry an SBAT section at all (CentOS 7 predates SBAT), so those CVEs
-can't be addressed by SBAT generation and must be blocked by hash instead.
+never received the SBAT-tracked fixes from June 2022 onward. Most of these
+builds (everything before the `2.02-0.87` errata line) predate SBAT
+entirely and carry no `.sbat` section at all. A handful of later
+`2.02-0.87.x` errata builds do carry one — we've directly verified
+generations `grub,1` through `grub,3` across that line — but none reach
+the `grub,4`/`grub,5` levels that actually cover the CVEs in question. So
+regardless of whether a given CentOS-signed build carries SBAT metadata,
+none of them are blocked by SBAT generation today, and all are blocked by
+hash instead.
 
 Our strategy: `VENDOR_DBX_FILE` (`openlogic_dbx.esl`) contains the
 Authenticode PE-hash of every distinct `grub2-efi`/`grub2-efi-x64` build ever
@@ -402,7 +408,10 @@ We are hosting the keys via DigiCert HSM with restricted access.
 ### Do you use EV certificates as embedded certificates in the shim?
 A _yes_ or _no_ will do. There's no penalty for the latter.
 *******************************************************************************
-Yes.
+No. The EV certificate signs the CAB submission wrapper for Microsoft's
+Hardware Dev Center, not the shim binary itself (see above). What's
+actually embedded in the shim binary is described in the next question:
+our own OpenLogic CA plus CentOS's Secure Boot CAs.
 
 *******************************************************************************
 ### Are you embedding a CA certificate in your shim?

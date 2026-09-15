@@ -502,17 +502,31 @@ shim,4,UEFI shim,shim,1,https://github.com/rhboot/shim
 shim.openlogic,1,OpenLogic,shim,16.1-1_ol001,ralloway@perforce.com
 ```
 fwupdate (fwupx64.efi — the one EFI binary shared by both the `fwupd` and
-`fwupdate` packages; `fwupd` itself has no `.efi` of its own): N/A. Confirmed
-via both the upstream `fwupdate-12` source (no "sbat" anywhere; the final
-build step's `objcopy -j` section whitelist would strip a `.sbat` section
-even if one existed) and the actual shipped binary (no `.sbat` section
-present). Upstream `rhboot/fwupdate` was last released in 2018 and the
-project's repo saw its last commit in March 2021, right as SBAT was being
-introduced, and was superseded by `fwupd` before SBAT existed — there is no
-upstream SBAT implementation to adopt. It is signed with our leaf cert.
+`fwupdate` packages; `fwupd` itself has no `.efi` of its own):
+```
+sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md
+fwupdate.openlogic,1,OpenLogic,fwupdate,12-6_ol001.el7,mail:ralloway@perforce.com
+```
+Upstream `rhboot/fwupdate` was last released in 2018 and the project's
+repo saw its last commit in March 2021, right as SBAT was being
+introduced, and was superseded by `fwupd` before SBAT existed — there was
+no upstream SBAT implementation to adopt, and no upstream-defined
+`fwupdate` component name to anchor to either, so we added our own
+vendor-scoped one. This was added specifically because shim treats SBAT
+as mandatory for any image it loads directly (not just protocol-verified
+images like the kernel via GRUB2), and `fwupx64.efi` is loaded exactly
+that way via `BootNext` — without this, `fwupx64.efi` would be
+unconditionally rejected the moment a real firmware update was attempted
+(raised in this application's community review). It is signed with our
+leaf cert.
 
 kernel: N/A (the kernel image itself does not carry an SBAT section; it is
 signed with our leaf cert)
+
+`grubx64.efi`, `grubia32.efi`, and `fwupx64.efi` are checked into this
+repo (root) as of 260915, so the `grub,5` entry, the module list, and CVE
+status can be verified directly rather than only by extracting them from
+the SRPM.
 
 *******************************************************************************
 ### If shim is loading GRUB2 bootloader, which modules are built into your signed GRUB2 image?

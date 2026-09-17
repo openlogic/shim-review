@@ -383,12 +383,20 @@ sides.
 ### Which files in this repo are the logs for your build?
 This should include logs for creating the buildroots, applying patches, doing the build, creating the archives, etc.
 *******************************************************************************
-**Pending.** `root.log.shim.20260915-101619.centos7.log`/
-`build.log.shim.20260915-101602.centos7.log` were for the 260915 build
-and no longer correspond to the `shimx64.efi`/`shimia32.efi` checked in
-here as of 260917 -- removed rather than left as stale/misleading
-references. Fresh logs from the build that produced the current binaries
-need to be added here before this answer is complete.
+root.log.shim.20260917-160739.centos7.log
+build.log.shim.20260917-160722.centos7.log
+
+From the PublicPublish mock build (`centos+epel-7-x86_64`) of
+`shim-16.1-1_ol001.el7.src.rpm` above that produced the `shimx64.efi`/
+`shimia32.efi` checked in here. Confirmed matching, not just present:
+`build.log` shows `VENDOR_DB_FILE=.../openlogic-and-centos-db.esl
+VENDOR_DBX_FILE=.../openlogic_dbx.esl SBAT_AUTOMATIC_DATE=2025021800` on
+every compile invocation, processes `SOURCES/sbat.openlogic.csv` (the
+file carrying this round's `image-support@openlogic.com` change), and
+its final `RPMS/` lines match the NVR of the binaries actually checked
+in. Supersedes the 260915 `root.log`/`build.log`, which were for the
+build before this round's contact-email fix and have been removed
+rather than left as stale references.
 
 *******************************************************************************
 ### What changes were made in the distro's secure boot chain since your SHIM was last signed?

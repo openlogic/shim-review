@@ -255,7 +255,7 @@ Skip this, if you're not using GRUB2, otherwise do you have an entry in your GRU
 *******************************************************************************
 Yes. Our GRUB2 binary's SBAT section includes `grub,5,Free Software
 Foundation,grub,2.02,https://www.gnu.org/software/grub/`, in addition to our
-own appended `grub.openlogic,1,OpenLogic,grub2,2.02-169_ol000.el7,mail:ralloway@perforce.com`
+own appended `grub.openlogic,1,OpenLogic,grub2,2.02-169_ol000.el7,mail:image-support@openlogic.com`
 entry and the preserved `grub.rh,2,Red Hat,grub2,2.02-169_ol000.el7,mailto:secalert@redhat.com`
 entry (see the SBAT entries listed later in this document).
 
@@ -329,10 +329,17 @@ builds (everything before the `2.02-0.87` errata line) predate SBAT
 entirely and carry no `.sbat` section at all. A handful of later
 `2.02-0.87.x` errata builds do carry one — we've directly verified
 generations `grub,1` through `grub,3` across that line — but none reach
-the `grub,4`/`grub,5` levels that actually cover the CVEs in question. So
-regardless of whether a given CentOS-signed build carries SBAT metadata,
-none of them are blocked by SBAT generation today, and all are blocked by
-hash instead.
+the `grub,4`/`grub,5` levels that actually cover the CVEs in question.
+
+We now also enforce `grub,5` via `SBAT_AUTOMATIC_DATE` (see that question
+elsewhere in this document), which independently blocks every one of
+these builds on its own: the sbat-less majority because shim requires an
+SBAT section on any image it loads directly (not just images verified
+indirectly through the shim_lock protocol), and the `grub,1`-`grub,3`
+errata builds by straightforward generation comparison against our
+`grub,5` floor. So the hash list below is defense-in-depth, not the sole
+enforcement mechanism it was before that change — SBAT alone already
+covers every CentOS-signed GRUB2 build we're aware of today.
 
 Our strategy: `VENDOR_DBX_FILE` (`openlogic_dbx.esl`) contains the
 Authenticode PE-hash of every distinct `grub2-efi`/`grub2-efi-x64` build
@@ -344,13 +351,13 @@ trees on vault.centos.org; the package was renamed `grub2-efi` to
 never existed before 7.4, unlike the x64 line's rename). 38 entries
 total. `shimx64.efi` and `shimia32.efi` embed the same combined list, so
 both architectures are covered by the same hash-blocking regardless of
-which one a given customer boots. This ensures our shim cannot chainload
-any GRUB2 binary CentOS has ever shipped, on either architecture,
-regardless of which CVEs it is or isn't patched against — only GRUB2
-built and signed by us (or a future CentOS build we haven't yet
-enumerated, at which point we'd add its hash) can boot. The
-CentOS CA entries in `VENDOR_DB_FILE` remain meaningful for the kernel and
-fwupdate binaries they've signed, which are not affected by these GRUB2 CVEs.
+which one a given customer boots. We're keeping it even though SBAT
+enforcement alone is now sufficient: it's harmless, it doesn't depend on
+our SBAT policy never changing, and CentOS 7 is EoL with vault.centos.org
+frozen, so this list is already exhaustive and will never need a new
+entry for a genuinely new CentOS 7 GRUB2 build. The CentOS CA entries in
+`VENDOR_DB_FILE` remain meaningful for the kernel and fwupdate binaries
+they've signed, which are not affected by these GRUB2 CVEs.
 
 *******************************************************************************
 ### Is the Dockerfile in your repository the recipe for reproducing the building of your shim binary?
@@ -418,7 +425,7 @@ itself); their embedded VENDOR_DB_FILE/VENDOR_DBX_FILE sections are
 byte-identical to openlogic-and-centos-db.esl/openlogic_dbx.esl as
 packaged in the SRPM above, on both architectures; the `.sbat` section
 (shim's own identity) still matches this document's entries exactly
-(`shim.openlogic,1,OpenLogic,shim,16.1-1_ol001,ralloway@perforce.com`);
+(`shim.openlogic,1,OpenLogic,shim,16.1-1_ol001,mail:image-support@openlogic.com`);
 and the compiled-in automatic SBAT revocation policy now reads
 `sbat,1,2025021800 / shim,4 / grub,5` (previously `grub,3`) on both
 architectures, confirmed by extracting the `.sbatlevel` section directly
@@ -486,26 +493,26 @@ shim:
 ```
 sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md
 shim,4,UEFI shim,shim,1,https://github.com/rhboot/shim
-shim.openlogic,1,OpenLogic,shim,16.1-1_ol001,ralloway@perforce.com
+shim.openlogic,1,OpenLogic,shim,16.1-1_ol001,mail:image-support@openlogic.com
 ```
 grub2:
 ```
 sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md
 grub,5,Free Software Foundation,grub,2.02,https://www.gnu.org/software/grub/
 grub.rh,2,Red Hat,grub2,2.02-169_ol000.el7,mailto:secalert@redhat.com
-grub.openlogic,1,OpenLogic,grub2,2.02-169_ol000.el7,mail:ralloway@perforce.com
+grub.openlogic,1,OpenLogic,grub2,2.02-169_ol000.el7,mail:image-support@openlogic.com
 ```
 MokManager:
 ```
 sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md
 shim,4,UEFI shim,shim,1,https://github.com/rhboot/shim
-shim.openlogic,1,OpenLogic,shim,16.1-1_ol001,ralloway@perforce.com
+shim.openlogic,1,OpenLogic,shim,16.1-1_ol001,mail:image-support@openlogic.com
 ```
 fwupdate (fwupx64.efi — the one EFI binary shared by both the `fwupd` and
 `fwupdate` packages; `fwupd` itself has no `.efi` of its own):
 ```
 sbat,1,SBAT Version,sbat,1,https://github.com/rhboot/shim/blob/main/SBAT.md
-fwupdate.openlogic,1,OpenLogic,fwupdate,12-6_ol001.el7,mail:ralloway@perforce.com
+fwupdate.openlogic,1,OpenLogic,fwupdate,12-6_ol001.el7,mail:image-support@openlogic.com
 ```
 Upstream `rhboot/fwupdate` was last released in 2018 and the project's
 repo saw its last commit in March 2021, right as SBAT was being

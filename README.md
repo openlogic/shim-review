@@ -369,35 +369,25 @@ If your shim binaries can't be reproduced using the provided Dockerfile, please 
 *******************************************************************************
 Yes.
 
-Confirmed 260915 via `docker build .` against the current repo state
-(this binary was refreshed that day -- see the hash question below for
-what changed and why): the rebuilt `shimx64.efi`/`shimia32.efi` are
-byte-for-byte identical to the copies checked in here (`diff` on full
-hexdumps and `cmp` both pass with no differences -- either would abort
-the build on a mismatch), matching SHA256
-(`e6612032f0...` x64, `207686c7e8...` ia32) and matching `pesign -h -P`
-pre-signature hashes (`6ee11d875a...` x64, `fbba4f5e18...` ia32) on both
-sides.
+Confirmed 260915 via `docker build .` (see the previous refresh's
+methodology -- `diff` on full hexdumps, `cmp`, SHA256, and `pesign -h -P`
+pre-signature hash all matching). **This binary was refreshed again on
+260917** (see the hash question below for what changed and why) and
+Docker reproducibility has not yet been re-confirmed against this newer
+content -- pending. The 260915 confirmation's specific hash values are no
+longer accurate for the binaries checked in now and have been removed
+rather than left stale.
 
 *******************************************************************************
 ### Which files in this repo are the logs for your build?
 This should include logs for creating the buildroots, applying patches, doing the build, creating the archives, etc.
 *******************************************************************************
-root.log.shim.20260915-101619.centos7.log
-build.log.shim.20260915-101602.centos7.log
-
-From the PublicPublish mock build (`centos+epel-7-x86_64`) of
-`shim-16.1-1_ol001.el7.src.rpm` above that produced the `shimx64.efi`/
-`shimia32.efi` checked in here. Confirmed matching, not just present:
-`build.log` shows `VENDOR_DB_FILE=.../openlogic-and-centos-db.esl
-VENDOR_DBX_FILE=.../openlogic_dbx.esl SBAT_AUTOMATIC_DATE=2025021800` on
-every compile invocation, and its final `RPMS/` lines
-(`shim-unsigned-x64-16.1-1_ol001.el7.x86_64.rpm`,
-`shim-unsigned-ia32-16.1-1_ol001.el7.x86_64.rpm`, plus debuginfo
-packages) match the NVR of the binaries actually checked in. Supersedes
-the previous (260721) `root.log`/`build.log`, which were for the build
-before this application's community-review fixes and have been removed
-rather than left as stale references.
+**Pending.** `root.log.shim.20260915-101619.centos7.log`/
+`build.log.shim.20260915-101602.centos7.log` were for the 260915 build
+and no longer correspond to the `shimx64.efi`/`shimia32.efi` checked in
+here as of 260917 -- removed rather than left as stale/misleading
+references. Fresh logs from the build that produced the current binaries
+need to be added here before this answer is complete.
 
 *******************************************************************************
 ### What changes were made in the distro's secure boot chain since your SHIM was last signed?
@@ -409,33 +399,31 @@ Skip this, if this is your first application for having shim signed.
 *******************************************************************************
 ### What is the SHA256 hash of your final shim binary?
 *******************************************************************************
-207686c7e8d93e43684adc9fd823c466bb2fe33c4e0cec68585c83f75763cf26  shimia32.efi
-e6612032f08e222e6a1086d25688d923fa8bdc38029d57f831e5777778eedca5  shimx64.efi
+4d94da58835a41ad8c54ce1279270a1b7fb2e1a8e8057bd58904230c0d806a9f  shimia32.efi
+ade0118e7a00b4727629e4d52a765ba8f77d59910df8ffb08c680cb387460510  shimx64.efi
 
-Rebuilt 260915 from the current shim.spec (`openlogic_dbx.esl` now
-covering ia32 as well as x64 -- 38 entries total -- and
-`SBAT_AUTOMATIC_DATE` bumped from `2024010900` to `2025021800`, both
+Rebuilt 260917 from the current shim.spec (`sbat.openlogic.csv`'s contact
+field switched to the team distribution list, `image-support@openlogic.com`,
 raised in this application's community review) via
 `shim-16.1-1_ol001.el7.src.rpm`, also checked into this repo, replacing
-the previous 260721 build. Verified: both binaries are correctly
-unsigned (no Authenticode signature -- this is expected, per Microsoft's
-own docs at learn.microsoft.com/en-us/windows-hardware/drivers/dashboard/file-signing-reqs,
+the 260915 build. Verified: both binaries are correctly unsigned (no
+Authenticode signature -- this is expected, per Microsoft's own docs at
+learn.microsoft.com/en-us/windows-hardware/drivers/dashboard/file-signing-reqs,
 the EV certificate signs the submission CAB file, not the shim binary
 itself); their embedded VENDOR_DB_FILE/VENDOR_DBX_FILE sections are
-byte-identical to openlogic-and-centos-db.esl/openlogic_dbx.esl as
-packaged in the SRPM above, on both architectures; the `.sbat` section
-(shim's own identity) still matches this document's entries exactly
-(`shim.openlogic,1,OpenLogic,shim,16.1-1_ol001,mail:image-support@openlogic.com`);
-and the compiled-in automatic SBAT revocation policy now reads
-`sbat,1,2025021800 / shim,4 / grub,5` (previously `grub,3`) on both
-architectures, confirmed by extracting the `.sbatlevel` section directly
-rather than trusting the build log alone. The SRPM itself was confirmed
-reproducible against the checked-in `shim.spec`/`SOURCES` (`rpmbuild -bs`
-locally, file-for-file and byte-for-byte identical output, differing
-only in the NVR's build-environment snapshot suffix) -- this specific
-check is a local-rebuild comparison, not the `docker build .`
-reproducibility check described above, which is still pending
-re-confirmation.
+unchanged and still byte-identical to
+openlogic-and-centos-db.esl/openlogic_dbx.esl as packaged in the SRPM
+above, on both architectures; the `.sbat` section (shim's own identity)
+now reads `shim.openlogic,1,OpenLogic,shim,16.1-1_ol001,mail:image-support@openlogic.com`,
+matching this document's entries; and the compiled-in automatic SBAT
+revocation policy is unchanged (`sbat,1,2025021800 / shim,4 / grub,5`),
+confirmed by extracting the `.sbatlevel` section directly rather than
+assuming it. The SRPM itself was confirmed reproducible against the
+checked-in `shim.spec`/`SOURCES` (`rpmbuild -bs` locally, file-for-file
+and byte-for-byte identical output, differing only in the NVR's
+build-environment snapshot suffix) -- this specific check is a
+local-rebuild comparison, not the `docker build .` reproducibility check
+described above, which is still pending re-confirmation.
 
 *******************************************************************************
 ### How do you manage and protect the keys used in your shim?

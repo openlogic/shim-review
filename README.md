@@ -369,14 +369,15 @@ If your shim binaries can't be reproduced using the provided Dockerfile, please 
 *******************************************************************************
 Yes.
 
-Confirmed 260915 via `docker build .` (see the previous refresh's
-methodology -- `diff` on full hexdumps, `cmp`, SHA256, and `pesign -h -P`
-pre-signature hash all matching). **This binary was refreshed again on
-260917** (see the hash question below for what changed and why) and
-Docker reproducibility has not yet been re-confirmed against this newer
-content -- pending. The 260915 confirmation's specific hash values are no
-longer accurate for the binaries checked in now and have been removed
-rather than left stale.
+Confirmed 260917 via `docker build .` against the current repo state
+(this binary was refreshed that day -- see the hash question below for
+what changed and why): the rebuilt `shimx64.efi`/`shimia32.efi` are
+byte-for-byte identical to the copies checked in here (`diff` on full
+hexdumps and `cmp` both pass with no differences -- either would abort
+the build on a mismatch), matching SHA256
+(`ade0118e7a...` x64, `4d94da5883...` ia32) and matching `pesign -h -P`
+pre-signature hashes (`13a2085717...` x64, `5aa7ecdf1a...` ia32) on both
+sides.
 
 *******************************************************************************
 ### Which files in this repo are the logs for your build?
